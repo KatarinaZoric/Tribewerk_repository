@@ -93,6 +93,18 @@ router.put('/:id/resolve', async (req, res) => {
         if (agent) {
             agent.status = 'available';
             await agent.save();
+
+            const unassignedIssue = await Issue.findOne({ where: { assigned_agent_id: null, status: 'waiting_for_agent' } });
+
+            if (unassignedIssue) {
+              
+              unassignedIssue.assigned_agent_id = agent.id;
+              unassignedIssue.status = 'pending';
+              await unassignedIssue.save();
+
+              agent.status = 'busy';
+              await agent.save();
+          }
         }
 
         res.json(issue);
